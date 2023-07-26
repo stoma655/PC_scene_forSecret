@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/objects/Reflector.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/OutlinePass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/GlitchPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/shaders/DigitalGlitch.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/three@0.135.0/examples/js/postprocessing/VolumetricLightScattering.js"></script> -->
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    
+
+
+<script type="module">
+      // Создаем сцену
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x171010);
+
+      // Создаем камеру
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 5;
+
+      // Создаем рендерер
+    //   const renderer = new THREE.WebGLRenderer();
+      const renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer.shadowMap.enabled = true;
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Загружаем GLB модель
+      const loader = new THREE.GLTFLoader();
+      loader.load('models/cmputer.glb', function(gltf) {
+        // Добавляем модель в сцену
+        gltf.scene.rotation.y = -90 * (Math.PI / 180);
+        scene.add(gltf.scene);
+        gltf.scene.traverse(function(node) {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+      });
+
+      // монитор 
+      // Создаем материал для экрана монитора
+        const screenMaterial = new THREE.MeshBasicMaterial({color: 0xF1F1F1});
+
+        // Создаем геометрию для экрана монитора
+        const screenGeometry = new THREE.PlaneGeometry(1.85, 1.05);
+
+        // Создаем экран монитора
+        const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+        screen.position.set(-0.62, 0.79, -3.1); // Устанавливаем позицию экрана монитора
+        scene.add(screen);
+
+        // Создаем материал для лампочки
+        const bulbMaterial = new THREE.MeshBasicMaterial({color: 0xffff00});
+        const bulbGeometry = new THREE.SphereGeometry(0.1);
+        // const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+        // bulb.position.set(-0.62, 0.79, -3.1); // Устанавливаем позицию лампочки
+        // scene.add(bulb);
+        const bulbLight = new THREE.PointLight(0xffffff, 1, 3);
+        bulbLight.position.set(-0.62, 0.79, -3.1); // Устанавливаем позицию источника света
+        scene.add(bulbLight);
+
+
+
+
+
+
+
+      // пол и стены 
+      // Создаем материал для стен и пола
+        const wallMaterial = new THREE.MeshStandardMaterial({color: 0x4D4848});
+
+        // Создаем геометрию для стен и пола
+        const wallGeometry = new THREE.PlaneGeometry(25, 10);
+
+        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+        wall.position.set(4, 0, -5); // Устанавливаем позицию второй стены
+        wall.rotation.y = -90 * (Math.PI / 180);
+        scene.add(wall);
+
+        // Создаем вторую стену
+        const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
+        wall2.position.set(0, 0, -5); // Устанавливаем позицию второй стены
+        scene.add(wall2);
+
+        // Создаем пол
+        const floor = new THREE.Mesh(wallGeometry, wallMaterial);
+        floor.position.set(0, -2, 0); // Устанавливаем позицию пола
+        floor.rotation.x = -Math.PI / 2; // Поворачиваем пол
+        floor.castShadow = true;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+
+
+
+
+    //лампа 
+    // Создаем материал для столбика
+    const pillarMaterial = new THREE.MeshStandardMaterial({color: 0x4D4848});
+    // Создаем геометрию для столбика
+    const pillarGeometry = new THREE.CylinderGeometry(0.05, 0.05, 5);
+    // Создаем столбик
+    const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    pillar.castShadow = true;
+    pillar.receiveShadow = true;
+    pillar.position.set(-5, 0, -4); // Устанавливаем позицию столбика
+    scene.add(pillar);
+
+    const lineMaterial = new THREE.MeshBasicMaterial({color: 0xF7F8E0});
+    const lineGeometry = new THREE.CylinderGeometry(0.01, 0.01, 4);
+    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+    line.position.set(-4.92, 0.3, -4);
+    scene.add(line);
+
+
+    const light1 = new THREE.PointLight(0xF5DA81, 0.7, 12);
+    light1.position.set(-4.2, 1.5, -4);
+    light1.castShadow = true;
+    light1.shadow.bias = -0.003;
+    light1.shadow.mapSize.width = 600;
+    light1.shadow.mapSize.height = 600;
+    scene.add(light1);
+
+    const light2 = new THREE.PointLight(0xF5DA81, 0.7, 12);
+    light2.position.set(-4.2, 0, -4);
+    light2.castShadow = true;
+    light2.shadow.bias = -0.003;
+    light2.shadow.mapSize.width = 600;
+    light2.shadow.mapSize.height = 600;
+    scene.add(light2);
+
+    const light3 = new THREE.PointLight(0xF5DA81, 0.7, 12);
+    light3.position.set(-4.2, -1.5, -4);
+    // light3.castShadow = true;
+    // light3.shadow.bias = -0.003;
+    // light3.shadow.mapSize.width = 1048;
+    // light3.shadow.mapSize.height = 1048;
+    scene.add(light3);
+
+
+
+
+      // вперед
+      camera.position.z -= 7.6;
+      // выше ниже
+      camera.position.y += 0.8;
+      // лево право
+      camera.position.x -= 0.6;
+
+      // Скорость перемещения камеры
+        const cameraSpeed = 1.1;
+
+        // Обработчик нажатия клавиш
+        document.addEventListener('keydown', function(event) {
+        switch (event.key) {
+            case 'w':
+            // Перемещаем камеру вперед
+            camera.position.z -= cameraSpeed;
+            break;
+            case 's':
+            // Перемещаем камеру назад
+            camera.position.z += cameraSpeed;
+            break;
+            case 'a':
+            // Перемещаем камеру влево
+            camera.position.x -= cameraSpeed;
+            break;
+            case 'd':
+            // Перемещаем камеру вправо
+            camera.position.x += cameraSpeed;
+            break;
+        }
+        });
+
+
+// Целевая позиция камеры
+let targetPosition = new THREE.Vector3(0, 0.7, 0.2);
+
+// Исходная позиция камеры
+let initialPosition = camera.position.clone();
+
+// Текущее значение прокрутки колеса мыши
+let scrollValue = 0;
+
+// Скорость перемещения камеры
+let cameraSpeede = 0.8;
+
+// Обработчик прокрутки колеса мыши
+document.addEventListener('wheel', function(event) {
+  // Обновляем значение прокрутки колеса мыши
+  scrollValue += event.deltaY * cameraSpeede;
+  // Ограничиваем значение прокрутки колеса мыши
+  scrollValue = Math.min(Math.max(scrollValue, 0), 1000);
+});
+
+       // Создаем прожектор
+      const spotlight = new THREE.SpotLight(0xffffff);
+      spotlight.intensity = 2;
+      spotlight.angle = Math.PI / 8;
+      spotlight.position.set(-10, 25, 10);
+      spotlight.penumbra = 0.2;
+      spotlight.distance = 60;
+      spotlight.decay = 2;
+      scene.add(spotlight);
+
+      // Добавляем скелет прожектора
+    //   const helper = new THREE.SpotLightHelper(spotlight);
+    //   scene.add(helper);
+
+
+    // const composer = new THREE.EffectComposer(renderer);
+    // const renderPass = new THREE.RenderPass(scene, camera);
+    // composer.addPass(renderPass);
+    // const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 1.2, 0.85);
+    // composer.addPass(bloomPass);
+
+    const mouse = new THREE.Vector2();
+
+    document.addEventListener('mousemove', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    });
+
+
+        const maxCameraX = 2.8;
+    const maxCameraY = 1.8;
+
+      // Отрисовываем сцену
+      function animate() {
+        requestAnimationFrame(animate);
+
+
+
+        const targetX = THREE.MathUtils.mapLinear(mouse.x, -1, 1, -maxCameraX, maxCameraX);
+    const targetY = THREE.MathUtils.mapLinear(mouse.y, -1, 1, -maxCameraY, maxCameraY);
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.008);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.008);
+        // helper.update();
+        // Вычисляем промежуточную позицию камеры
+        let t = Math.min(Math.max(scrollValue / 1000, 0), 1);
+        let intermediatePosition = new THREE.Vector3().lerpVectors(initialPosition, targetPosition, t);
+        // Плавно перемещаем камеру к промежуточной позиции
+        camera.position.lerp(intermediatePosition, 0.08);
+
+
+        
+        renderer.render(scene, camera);
+        // composer.render();
+      }
+      animate();
+    </script>
+</body>
+</html>
